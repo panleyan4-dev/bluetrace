@@ -1,0 +1,18 @@
+# Local files and credentials
+.DS_Store
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Local hosting and generated output
+.openai/
+.netlify/
+.netlify-publish/
+dist/
+output/
+qa/
+reference-audit/
+node_modules/
+__pycache__/

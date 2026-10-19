@@ -1,0 +1,1854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="theme-color" content="#04121f" />
+  <title>BlueTrace — Immersive Ocean Journey</title>
+  <link rel="icon" href="data:," />
+  <link rel="preload" as="image" href="assets/images/bluetrace-logo-white.png" />
+  <link rel="preload" as="image" href="assets/images/about-bluetrace-background.png" />
+  <style>
+    :root {
+      color-scheme: dark;
+      --ocean-blue: #0a2e4d;
+      --deep-ocean: #04121f;
+      --coral-accent: #ff7a5c;
+      --degraded-grey: #7a8a92;
+      --text-light: #e8f1f5;
+      font-family: "Helvetica Neue", Helvetica, Arial, system-ui, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--deep-ocean);
+      color: var(--text-light);
+    }
+
+    body {
+      position: fixed;
+      inset: 0;
+      min-height: 100%;
+    }
+
+    main,
+    .witness {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: var(--deep-ocean);
+    }
+
+    .witness {
+      --witness-progress: 0;
+      --witness-prompt-opacity: 0;
+      --witness-end-opacity: 0;
+      --witness-video-scale: 1.018;
+      --witness-video-x: 0px;
+      --witness-video-y: 0px;
+      --witness-transition-opacity: 0;
+      isolation: isolate;
+      touch-action: none;
+    }
+
+    .witness__video {
+      position: absolute;
+      z-index: 1;
+      inset: -3%;
+      width: 106%;
+      height: 106%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      transform:
+        translate3d(var(--witness-video-x), var(--witness-video-y), 0)
+        scale(var(--witness-video-scale));
+      transform-origin: 50% 52%;
+      filter: saturate(0.96) contrast(1.02) brightness(0.94);
+      pointer-events: none;
+      will-change: transform, filter;
+      transition:
+        filter 1.15s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .witness__cover {
+      position: absolute;
+      z-index: 2;
+      inset: 0;
+      pointer-events: none;
+      opacity: 1;
+      transition: opacity 1.15s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .witness--started .witness__cover {
+      opacity: 0;
+    }
+
+    .witness__cover-video {
+      position: absolute;
+      inset: -5%;
+      width: 110%;
+      height: 110%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0;
+      transform: scale(1.035) translate3d(0, 0, 0);
+      filter: saturate(0.98) contrast(1.02) brightness(0.94);
+      transition: opacity 2.35s cubic-bezier(0.22, 1, 0.36, 1);
+      animation: witness-cover-drift 18s ease-in-out infinite alternate;
+      will-change: opacity, transform;
+    }
+
+    .witness__cover-video.is-active {
+      opacity: 1;
+    }
+
+    .witness__cover-video:nth-child(2) {
+      animation-delay: -8s;
+      animation-duration: 22s;
+    }
+
+    @keyframes witness-cover-drift {
+      from {
+        transform: scale(1.035) translate3d(-0.35%, -0.2%, 0);
+      }
+
+      to {
+        transform: scale(1.055) translate3d(0.45%, 0.25%, 0);
+      }
+    }
+
+    .witness__transition-wash {
+      position: absolute;
+      z-index: 4;
+      inset: 0;
+      pointer-events: none;
+      opacity: var(--witness-transition-opacity);
+      background:
+        linear-gradient(180deg, rgba(12, 67, 92, 0.12), rgba(4, 18, 31, 0.38)),
+        radial-gradient(ellipse at 50% 46%, rgba(110, 206, 228, 0.1), rgba(4, 18, 31, 0.44) 76%);
+      backdrop-filter: blur(0.35rem);
+      transition: opacity 1.05s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .witness--entering .witness__transition-wash {
+      opacity: 1;
+    }
+
+    .witness::before {
+      content: "";
+      position: absolute;
+      z-index: 3;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(172, 231, 239, 0.08), transparent 30%, rgba(4, 18, 31, 0.14) 100%),
+        radial-gradient(ellipse at center, transparent 54%, rgba(2, 12, 20, 0.3) 100%);
+    }
+
+    .witness::after {
+      content: "";
+      position: absolute;
+      z-index: 4;
+      inset: 0;
+      pointer-events: none;
+      opacity: var(--witness-end-opacity);
+      background:
+        radial-gradient(ellipse at 44% 72%, rgba(117, 111, 84, 0.26), transparent 48%),
+        linear-gradient(180deg, transparent 0%, rgba(55, 68, 52, 0.46) 100%);
+      filter: blur(10px);
+    }
+
+    .witness__logo {
+      position: absolute;
+      z-index: 5;
+      top: max(clamp(1.25rem, 3.6vw, 3.25rem), env(safe-area-inset-top));
+      left: clamp(1.15rem, 4.2vw, 4.4rem);
+      width: clamp(8.4rem, 15.5vw, 14rem);
+      height: auto;
+      pointer-events: none;
+      user-select: none;
+      opacity: 0.96;
+      filter:
+        drop-shadow(0 0.18rem 0.34rem rgba(3, 15, 24, 0.24))
+        drop-shadow(0 0 1rem rgba(160, 225, 237, 0.1));
+    }
+
+    .witness__nav {
+      position: absolute;
+      z-index: 7;
+      top: max(clamp(1.55rem, 3.85vw, 3.45rem), env(safe-area-inset-top));
+      right: clamp(1.15rem, 4.2vw, 4.4rem);
+      max-width: calc(100vw - clamp(18rem, 28vw, 25rem));
+    }
+
+    .witness__nav-list {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: clamp(0.9rem, 1.9vw, 2.25rem);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .witness__nav-list > li {
+      position: relative;
+    }
+
+    .witness__nav a,
+    .about-page__nav a,
+    .witness__language-toggle {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      min-height: 2.25rem;
+      color: rgba(232, 241, 245, 0.82);
+      font-size: clamp(0.58rem, 0.78vw, 0.74rem);
+      font-weight: 650;
+      letter-spacing: 0.19em;
+      line-height: 1;
+      text-decoration: none;
+      text-transform: uppercase;
+      text-shadow: 0 0.18rem 0.55rem rgba(4, 18, 31, 0.54);
+      transition:
+        color 220ms ease,
+        opacity 220ms ease,
+        transform 220ms ease;
+    }
+
+    .witness__language-toggle {
+      gap: 0.28rem;
+      min-height: 1.42rem;
+      padding: 0.18rem 0.44rem 0.17rem 0.56rem;
+      border: 1px solid rgba(159, 232, 246, 0.78);
+      border-radius: 0.26rem;
+      background: rgba(4, 18, 31, 0.1);
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: none;
+    }
+
+    .witness__language-toggle::before,
+    .witness__language-toggle::after {
+      content: "";
+      flex: 0 0 auto;
+    }
+
+    .witness__language-toggle::before {
+      display: none;
+    }
+
+    .witness__language-toggle::after {
+      width: 0.42rem;
+      height: 0.42rem;
+      border-right: 1px solid currentColor;
+      border-bottom: 1px solid currentColor;
+      transform: translateY(-0.12rem) rotate(45deg);
+      transition: transform 220ms ease;
+    }
+
+    .witness__language-toggle[aria-expanded="true"]::after {
+      transform: translateY(0.08rem) rotate(225deg);
+    }
+
+    .witness__nav a::after,
+    .about-page__nav a::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0.19em;
+      bottom: 0.25rem;
+      height: 1px;
+      opacity: 0;
+      transform: scaleX(0.42);
+      transform-origin: left center;
+      background: rgba(232, 241, 245, 0.78);
+      transition:
+        opacity 220ms ease,
+        transform 220ms ease;
+    }
+
+    .witness__nav a:hover,
+    .witness__nav a:focus-visible,
+    .witness__language-toggle:hover,
+    .witness__language-toggle:focus-visible,
+    .about-page__nav a:hover,
+    .about-page__nav a:focus-visible,
+    .about-page__nav a[aria-current="page"] {
+      color: rgba(255, 255, 255, 0.98);
+      transform: translateY(-1px);
+    }
+
+    .witness__nav a:hover::after,
+    .witness__nav a:focus-visible::after,
+    .about-page__nav a:hover::after,
+    .about-page__nav a:focus-visible::after,
+    .about-page__nav a[aria-current="page"]::after {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+
+    .witness__nav a:focus-visible,
+    .about-page__nav a:focus-visible,
+    .witness__language-toggle:focus-visible {
+      outline: 1px solid rgba(232, 241, 245, 0.72);
+      outline-offset: 0.42rem;
+    }
+
+    .witness__language-menu {
+      position: absolute;
+      top: calc(100% + 0.45rem);
+      right: 0;
+      z-index: 40;
+      width: 9.7rem;
+      margin: 0;
+      padding: 0.66rem 0.86rem 0.72rem;
+      list-style: none;
+      color: rgba(232, 241, 245, 0.88);
+      border: 1px solid rgba(159, 232, 246, 0.78);
+      background: rgba(4, 33, 55, 0.52);
+      clip-path: polygon(0 0, 100% 0, 100% calc(100% - 0.72rem), calc(100% - 0.72rem) 100%, 0 100%);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(0, -0.35rem, 0);
+      transition:
+        opacity 260ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .witness__language-menu::after {
+      content: "";
+      position: absolute;
+      right: -1px;
+      bottom: 0.34rem;
+      width: 1.04rem;
+      height: 1px;
+      background: rgba(159, 232, 246, 0.78);
+      transform: rotate(-45deg);
+      transform-origin: right center;
+    }
+
+    .witness__language.is-open .witness__language-menu {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .witness__language-menu li + li {
+      border-top: 1px solid rgba(159, 232, 246, 0.24);
+    }
+
+    .witness__language-menu a,
+    .witness__language-menu button {
+      display: flex;
+      width: 100%;
+      min-height: 1.72rem;
+      align-items: center;
+      color: rgba(232, 241, 245, 0.86);
+      border: 0;
+      background: transparent;
+      font-family: "Avenir Next Condensed", "Helvetica Neue Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.22em;
+      line-height: 1;
+      text-decoration: none;
+      text-shadow: 0 0.16rem 0.55rem rgba(4, 18, 31, 0.58);
+      text-transform: uppercase;
+      cursor: pointer;
+      transition:
+        color 180ms ease,
+        transform 180ms ease;
+    }
+
+    .witness__language-menu a::after {
+      display: none;
+    }
+
+    .witness__language-menu a:hover,
+    .witness__language-menu a:focus-visible,
+    .witness__language-menu button:hover,
+    .witness__language-menu button:focus-visible {
+      color: #9fe8f6;
+      transform: translateX(0.12rem);
+      outline: none;
+    }
+
+    .witness__language-menu a[lang="zh-CN"],
+    .witness__language-menu button[lang="zh-CN"] {
+      font-size: 0.76rem;
+      letter-spacing: 0.18em;
+      text-transform: none;
+    }
+
+    .about-page {
+      position: fixed;
+      z-index: 30;
+      inset: 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background: var(--deep-ocean);
+      color: var(--text-light);
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: scale(1.012);
+      transition:
+        opacity 780ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 980ms cubic-bezier(0.22, 1, 0.36, 1),
+        visibility 0s linear 780ms;
+      scrollbar-color: rgba(232, 241, 245, 0.42) rgba(4, 18, 31, 0.2);
+    }
+
+    .about-page:target {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: scale(1);
+      transition-delay: 0s;
+    }
+
+    .about-page__background {
+      position: fixed;
+      z-index: 1;
+      inset: -2%;
+      width: 104%;
+      height: 104%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0.92;
+      filter: saturate(0.96) contrast(1.04) brightness(0.82);
+      transform: scale(1.025);
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .about-page::before,
+    .about-page::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .about-page::before {
+      z-index: 2;
+      background:
+        radial-gradient(ellipse at 50% 34%, rgba(151, 219, 232, 0.16), transparent 36%),
+        linear-gradient(180deg, rgba(4, 18, 31, 0.12) 0%, rgba(4, 18, 31, 0.58) 80%, rgba(4, 18, 31, 0.78) 100%),
+        linear-gradient(90deg, rgba(4, 18, 31, 0.42), transparent 30%, transparent 70%, rgba(4, 18, 31, 0.42));
+    }
+
+    .about-page::after {
+      z-index: 3;
+      opacity: 0.68;
+      background:
+        radial-gradient(circle at 18% 72%, rgba(167, 225, 236, 0.07), transparent 18%),
+        radial-gradient(circle at 76% 24%, rgba(167, 225, 236, 0.08), transparent 20%);
+      mix-blend-mode: screen;
+    }
+
+    .about-page__header {
+      position: fixed;
+      z-index: 8;
+      top: max(clamp(1.25rem, 3.6vw, 3.25rem), env(safe-area-inset-top));
+      left: clamp(1.15rem, 4.2vw, 4.4rem);
+      right: clamp(1.15rem, 4.2vw, 4.4rem);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 2rem;
+      pointer-events: none;
+    }
+
+    .about-page__home,
+    .about-page__nav,
+    .about-page__nav a,
+    .about-page__nav .witness__language-toggle,
+    .about-page__nav .witness__language-menu {
+      pointer-events: auto;
+    }
+
+    .about-page__logo {
+      display: block;
+      width: clamp(8.4rem, 15.5vw, 14rem);
+      height: auto;
+      opacity: 0.96;
+      filter:
+        drop-shadow(0 0.18rem 0.34rem rgba(3, 15, 24, 0.24))
+        drop-shadow(0 0 1rem rgba(160, 225, 237, 0.1));
+    }
+
+    .about-page__nav {
+      max-width: calc(100vw - clamp(18rem, 28vw, 25rem));
+    }
+
+    .about-page__content {
+      position: relative;
+      z-index: 5;
+      display: grid;
+      min-height: 100svh;
+      align-items: center;
+      padding:
+        clamp(8.5rem, 14vw, 12rem)
+        clamp(1.35rem, 7vw, 7.5rem)
+        clamp(4.5rem, 9vw, 7rem);
+    }
+
+    .about-page__inner {
+      width: min(73rem, 100%);
+      margin: 0 auto;
+    }
+
+    .about-page__kicker {
+      margin-bottom: clamp(1.15rem, 2vw, 1.65rem);
+      color: rgba(232, 241, 245, 0.74);
+      font-size: clamp(0.68rem, 0.9vw, 0.82rem);
+      font-weight: 650;
+      letter-spacing: 0.28em;
+      text-transform: uppercase;
+    }
+
+    .about-page__title {
+      max-width: 14ch;
+      color: rgba(248, 252, 253, 0.96);
+      font-family: "Avenir Next Condensed", "Helvetica Neue Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+      font-size: clamp(3.4rem, 8.4vw, 7.35rem);
+      font-stretch: condensed;
+      font-weight: 520;
+      line-height: 0.91;
+      letter-spacing: 0.045em;
+      text-transform: uppercase;
+      text-wrap: balance;
+      text-shadow:
+        0 0.16rem 0.5rem rgba(4, 18, 31, 0.5),
+        0 0 2.3rem rgba(110, 206, 228, 0.13);
+    }
+
+    .about-page__lead {
+      max-width: 64rem;
+      margin-top: clamp(1.35rem, 3vw, 2.45rem);
+      color: rgba(232, 241, 245, 0.92);
+      font-size: clamp(1.24rem, 2.05vw, 2.15rem);
+      font-weight: 360;
+      line-height: 1.45;
+      letter-spacing: 0.01em;
+      text-wrap: pretty;
+      text-shadow: 0 0.12rem 0.42rem rgba(4, 18, 31, 0.56);
+    }
+
+    .about-page__sections {
+      display: grid;
+      gap: clamp(1rem, 2vw, 1.65rem);
+      max-width: 68rem;
+      margin-top: clamp(2.5rem, 5vw, 4.7rem);
+    }
+
+    .about-page__section {
+      display: grid;
+      grid-template-columns: minmax(8.5rem, 13rem) minmax(0, 1fr);
+      gap: clamp(1rem, 3vw, 3rem);
+      padding-top: clamp(1rem, 1.8vw, 1.45rem);
+      border-top: 1px solid rgba(232, 241, 245, 0.2);
+    }
+
+    .about-page__section h2 {
+      color: rgba(232, 241, 245, 0.76);
+      font-size: clamp(0.66rem, 0.88vw, 0.78rem);
+      font-weight: 700;
+      letter-spacing: 0.24em;
+      line-height: 1.35;
+      text-transform: uppercase;
+    }
+
+    .about-page__section p {
+      max-width: 72ch;
+      color: rgba(232, 241, 245, 0.84);
+      font-size: clamp(0.92rem, 1.18vw, 1.08rem);
+      font-weight: 360;
+      line-height: 1.72;
+      letter-spacing: 0.012em;
+      text-wrap: pretty;
+    }
+
+    .about-page__section p + p {
+      margin-top: 0.85rem;
+    }
+
+    .about-page__closing {
+      color: rgba(255, 255, 255, 0.92);
+    }
+
+    .witness__intro {
+      position: absolute;
+      z-index: 6;
+      top: 50.5%;
+      left: 50%;
+      width: min(58rem, calc(100vw - 2.5rem));
+      display: grid;
+      place-items: center;
+      text-align: center;
+      pointer-events: none;
+      transform: translate3d(-50%, -50%, 0);
+      transition:
+        opacity 620ms cubic-bezier(0.22, 1, 0.36, 1),
+        filter 620ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .witness--started .witness__intro {
+      opacity: 0;
+      filter: blur(0.9rem);
+      transform: translate3d(-50%, calc(-50% - 1.6rem), 0);
+    }
+
+    .witness__intro-stage {
+      grid-area: 1 / 1;
+      display: grid;
+      gap: clamp(0.72rem, 1.7vw, 1.18rem);
+      justify-items: center;
+    }
+
+    .witness__intro-stage--brand {
+      animation: witnessBrandDepart 900ms 3.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .witness__intro-stage--dive {
+      gap: clamp(0.76rem, 1.8vw, 1.22rem);
+      opacity: 0;
+      filter: blur(0.7rem);
+      transform: translate3d(0, 1.15rem, 0);
+      animation: witnessDiveWordsArrive 1.18s 4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .witness__intro-stage--dive .witness__intro-kicker,
+    .witness__intro-stage--dive .witness__intro-copy {
+      opacity: 0;
+      filter: blur(0.62rem);
+      transform: translate3d(0, 1.05rem, 0);
+      clip-path: inset(0 0 100% 0);
+    }
+
+    .witness__intro-stage--dive .witness__intro-kicker {
+      animation: witnessDiveLineArrive 980ms 4.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .witness__intro-stage--dive .witness__intro-copy {
+      animation: witnessDiveLineArrive 1.08s 4.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    .witness__intro-line,
+    .witness__intro-subtitle,
+    .witness__intro-kicker {
+      font-family: "Avenir Next Condensed", "Helvetica Neue Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+      text-transform: uppercase;
+      text-shadow:
+        0 0.16rem 0.55rem rgba(4, 18, 31, 0.58),
+        0 0 2.2rem rgba(159, 232, 246, 0.14);
+      will-change: transform, opacity, filter, clip-path;
+    }
+
+    .witness__intro-line {
+      color: rgba(246, 252, 254, 0.96);
+      font-size: clamp(4.2rem, 11.4vw, 10.8rem);
+      font-stretch: condensed;
+      font-weight: 760;
+      line-height: 0.82;
+      letter-spacing: 0.045em;
+      clip-path: inset(0 0 100% 0);
+      animation: witnessTitleDrop 980ms 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .witness__intro-subtitle {
+      color: rgba(159, 232, 246, 0.86);
+      font-size: clamp(0.68rem, 1.06vw, 0.94rem);
+      font-weight: 760;
+      line-height: 1.2;
+      letter-spacing: 0.36em;
+      clip-path: inset(0 100% 0 0);
+      animation: witnessSubtitleTrace 980ms 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    .witness__intro-kicker {
+      color: rgba(246, 252, 254, 0.96);
+      font-size: clamp(2.25rem, 5.2vw, 5.05rem);
+      font-stretch: condensed;
+      font-weight: 720;
+      line-height: 0.94;
+      letter-spacing: 0.075em;
+      text-transform: none;
+    }
+
+    .witness__intro-copy {
+      max-width: min(44rem, calc(100vw - 3rem));
+      color: rgba(232, 241, 245, 0.84);
+      font-size: clamp(1rem, 1.55vw, 1.35rem);
+      font-weight: 360;
+      letter-spacing: 0.045em;
+      line-height: 1.52;
+      text-wrap: balance;
+      text-shadow:
+        0 0.14rem 0.56rem rgba(4, 18, 31, 0.66),
+        0 0 1.6rem rgba(159, 232, 246, 0.1);
+    }
+
+    @keyframes witnessTitleDrop {
+      0% {
+        opacity: 0;
+        filter: blur(0.75rem);
+        clip-path: inset(0 0 100% 0);
+        transform: translate3d(0, -3.6rem, 0) scaleY(1.08);
+      }
+
+      62% {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+      }
+
+      100% {
+        opacity: 1;
+        filter: blur(0);
+        clip-path: inset(0 0 0 0);
+        transform: translate3d(0, 0, 0) scaleY(1);
+      }
+    }
+
+    @keyframes witnessSubtitleTrace {
+      0% {
+        opacity: 0;
+        filter: blur(0.48rem);
+        clip-path: inset(0 100% 0 0);
+        transform: translate3d(0, 0.8rem, 0);
+      }
+
+      100% {
+        opacity: 1;
+        filter: blur(0);
+        clip-path: inset(0 0 0 0);
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    @keyframes witnessBrandDepart {
+      to {
+        opacity: 0;
+        filter: blur(0.85rem);
+        transform: translate3d(0, -1.35rem, 0);
+      }
+    }
+
+    @keyframes witnessDiveWordsArrive {
+      to {
+        opacity: 1;
+        filter: blur(0);
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    @keyframes witnessDiveLineArrive {
+      0% {
+        opacity: 0;
+        filter: blur(0.62rem);
+        clip-path: inset(0 0 100% 0);
+        transform: translate3d(0, 1.05rem, 0);
+      }
+
+      100% {
+        opacity: 1;
+        filter: blur(0);
+        clip-path: inset(0 0 0 0);
+        transform: translate3d(0, 0, 0);
+      }
+    }
+
+    @keyframes witnessBeginArrive {
+      0% {
+        opacity: 0;
+        visibility: hidden;
+        transform: translate(-50%, calc(-50% + 0.9rem));
+      }
+
+      1% {
+        visibility: visible;
+      }
+
+      100% {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%);
+      }
+    }
+
+    .witness__begin {
+      position: absolute;
+      z-index: 6;
+      top: 74%;
+      left: 50%;
+      display: inline-grid;
+      min-width: clamp(11rem, 18vw, 16rem);
+      min-height: 3.35rem;
+      place-items: center;
+      padding: 0.95rem 1.6rem;
+      border: 1px solid rgba(232, 241, 245, 0.76);
+      background: rgba(4, 18, 31, 0.08);
+      color: rgba(232, 241, 245, 0.94);
+      font: inherit;
+      font-size: clamp(0.68rem, 1.12vw, 0.88rem);
+      font-weight: 500;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      opacity: 0;
+      visibility: hidden;
+      transform: translate(-50%, calc(-50% + 0.9rem));
+      transition:
+        opacity 420ms ease,
+        border-color 220ms ease,
+        background-color 220ms ease,
+        color 220ms ease;
+      animation: witnessBeginArrive 920ms 5.65s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      cursor: pointer;
+    }
+
+    .witness__begin::before,
+    .witness__begin::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: clamp(2.2rem, 5vw, 5rem);
+      height: 1px;
+      background: rgba(232, 241, 245, 0.54);
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .witness__begin::before {
+      right: calc(100% + clamp(0.8rem, 2vw, 1.5rem));
+    }
+
+    .witness__begin::after {
+      left: calc(100% + clamp(0.8rem, 2vw, 1.5rem));
+    }
+
+    .witness__begin:hover,
+    .witness__begin:focus-visible {
+      border-color: rgba(232, 241, 245, 0.98);
+      background: rgba(232, 241, 245, 0.1);
+      color: #ffffff;
+      outline: none;
+    }
+
+    .witness__begin:focus-visible {
+      box-shadow: 0 0 0 3px rgba(160, 225, 237, 0.18);
+    }
+
+    .witness--started .witness__begin {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      animation: none;
+    }
+
+    .witness__lab-link {
+      position: absolute;
+      z-index: 6;
+      top: 72%;
+      left: 50%;
+      display: inline-grid;
+      min-width: clamp(10.4rem, 15vw, 13.25rem);
+      min-height: 2.75rem;
+      place-items: center;
+      padding: 0.78rem 1.5rem;
+      border: 1px solid rgba(232, 241, 245, 0.54);
+      background: rgba(4, 18, 31, 0.08);
+      color: rgba(232, 241, 245, 0.9);
+      font-size: clamp(0.64rem, 0.82vw, 0.76rem);
+      font-weight: 720;
+      letter-spacing: 0.24em;
+      line-height: 1;
+      text-decoration: none;
+      text-transform: uppercase;
+      text-shadow: 0 0.16rem 0.5rem rgba(4, 18, 31, 0.62);
+      opacity: 0;
+      pointer-events: none;
+      transform: translate3d(-50%, 0.7rem, 0);
+      transition:
+        opacity 640ms cubic-bezier(0.22, 1, 0.36, 1),
+        transform 640ms cubic-bezier(0.22, 1, 0.36, 1),
+        border-color 220ms ease,
+        background-color 220ms ease,
+        color 220ms ease;
+    }
+
+    .witness__lab-link::before {
+      content: "";
+      position: absolute;
+      inset: -0.48rem;
+      opacity: 0.82;
+      pointer-events: none;
+      background:
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) left top / 1rem 1px no-repeat,
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) left top / 1px 1rem no-repeat,
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) right top / 1rem 1px no-repeat,
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) right top / 1px 1rem no-repeat,
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) left bottom / 1rem 1px no-repeat,
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) left bottom / 1px 1rem no-repeat,
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) right bottom / 1rem 1px no-repeat,
+        linear-gradient(rgba(159, 232, 246, 0.72), rgba(159, 232, 246, 0.72)) right bottom / 1px 1rem no-repeat;
+      transition:
+        opacity 220ms ease,
+        inset 220ms ease;
+    }
+
+    .witness__lab-link:hover,
+    .witness__lab-link:focus-visible {
+      border-color: rgba(232, 241, 245, 0.94);
+      background: rgba(232, 241, 245, 0.1);
+      color: #ffffff;
+      outline: none;
+    }
+
+    .witness__lab-link:hover::before,
+    .witness__lab-link:focus-visible::before {
+      inset: -0.62rem;
+      opacity: 1;
+    }
+
+    .witness__lab-link:focus-visible {
+      box-shadow: 0 0 0 3px rgba(160, 225, 237, 0.18);
+    }
+
+    .witness--lab-ready .witness__lab-link {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate3d(-50%, 0, 0);
+    }
+
+    .witness__hud {
+      position: absolute;
+      z-index: 5;
+      top: calc(74% + 3.55rem);
+      left: 50%;
+      pointer-events: none;
+      color: rgba(232, 241, 245, 0.82);
+      text-transform: uppercase;
+      text-align: center;
+      opacity: 0;
+      transform: translate3d(-50%, 0.35rem, 0);
+      transition:
+        opacity 520ms ease,
+        transform 520ms ease;
+    }
+
+    .witness--started:not(.witness--entering) .witness__hud {
+      opacity: 1;
+      transform: translate3d(-50%, 0, 0);
+    }
+
+    .witness__prompt {
+      display: grid;
+      justify-items: center;
+      gap: 0.62rem;
+      opacity: var(--witness-prompt-opacity);
+      white-space: nowrap;
+      text-shadow: 0 0.18rem 0.55rem rgba(4, 18, 31, 0.58);
+      transition: opacity 180ms linear;
+    }
+
+    .witness__prompt-mark {
+      position: relative;
+      display: grid;
+      width: clamp(2.25rem, 3.6vw, 3.1rem);
+      aspect-ratio: 1;
+      place-items: center;
+      border: 1px dotted rgba(159, 232, 246, 0.5);
+      border-radius: 50%;
+      color: rgba(159, 232, 246, 0.88);
+      filter: drop-shadow(0 0 0.45rem rgba(159, 232, 246, 0.18));
+    }
+
+    .witness__prompt-mark::before {
+      content: "";
+      position: absolute;
+      inset: 0.38rem;
+      border: 1px solid rgba(159, 232, 246, 0.16);
+      border-radius: 50%;
+    }
+
+    .witness__prompt-arrow {
+      position: absolute;
+      left: 50%;
+      width: 0.56rem;
+      height: 0.56rem;
+      border-top: 1px solid currentColor;
+      border-left: 1px solid currentColor;
+      transform: translateX(-50%) rotate(45deg);
+    }
+
+    .witness__prompt-arrow:first-child {
+      top: 0.8rem;
+    }
+
+    .witness__prompt-arrow:last-child {
+      top: 1.18rem;
+      opacity: 0.74;
+    }
+
+    .witness__prompt-text {
+      color: rgba(232, 241, 245, 0.82);
+      font-family: "Avenir Next Condensed", "Helvetica Neue Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+      font-size: clamp(0.58rem, 0.88vw, 0.76rem);
+      font-weight: 700;
+      letter-spacing: 0.36em;
+      line-height: 1;
+    }
+
+    .witness__dive-log {
+      position: absolute;
+      z-index: 5;
+      left: clamp(1rem, 3.2vw, 2.45rem);
+      bottom: max(1rem, env(safe-area-inset-bottom));
+      pointer-events: none;
+      color: rgba(232, 241, 245, 0.9);
+      opacity: 0;
+      transform: translate3d(-0.35rem, 0.35rem, 0);
+      transition:
+        opacity 520ms ease,
+        transform 520ms ease;
+    }
+
+    .witness--started:not(.witness--entering) .witness__dive-log {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
+
+    .witness__dive-info {
+      min-width: clamp(11rem, 18vw, 15.5rem);
+      font-family: "Avenir Next Condensed", "Helvetica Neue Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+      text-transform: uppercase;
+      text-shadow: 0 0.16rem 0.5rem rgba(4, 18, 31, 0.68);
+    }
+
+    .witness__dive-location {
+      margin: 0;
+      color: rgba(232, 241, 245, 0.94);
+      font-size: clamp(0.9rem, 1.4vw, 1.18rem);
+      font-weight: 760;
+      letter-spacing: 0.18em;
+      line-height: 1;
+    }
+
+    .witness__dive-process {
+      width: min(100%, 12.8rem);
+      margin-top: 0.42rem;
+      color: rgba(159, 232, 246, 0.92);
+      font-size: clamp(0.5rem, 0.78vw, 0.66rem);
+      font-weight: 740;
+      letter-spacing: 0.24em;
+      line-height: 1;
+    }
+
+    .witness__dive-meta {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.44rem;
+      color: rgba(232, 241, 245, 0.9);
+      font-size: clamp(0.5rem, 0.76vw, 0.64rem);
+      font-weight: 720;
+      letter-spacing: 0.22em;
+      line-height: 1;
+    }
+
+    .witness__dive-divider {
+      color: rgba(159, 232, 246, 0.62);
+    }
+
+    .witness__route {
+      position: absolute;
+      z-index: 5;
+      top: 54%;
+      right: clamp(1.1rem, 3.25vw, 3.9rem);
+      width: clamp(3.2rem, 4.7vw, 5.3rem);
+      height: min(62vh, 33rem);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(-50%);
+      transition: opacity 520ms ease;
+    }
+
+    .witness--started:not(.witness--entering) .witness__route {
+      opacity: 1;
+    }
+
+    .witness__route svg {
+      display: block;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+      filter:
+        drop-shadow(0 0.08rem 0.25rem rgba(4, 18, 31, 0.48))
+        drop-shadow(0 0 0.7rem rgba(158, 233, 246, 0.12));
+    }
+
+    .witness__route-track,
+    .witness__route-progress {
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .witness__route-track {
+      stroke: rgba(232, 241, 245, 0.3);
+      stroke-width: 1.25;
+    }
+
+    .witness__route-progress {
+      stroke: rgba(218, 249, 255, 0.92);
+      stroke-width: 2;
+      stroke-dasharray: 1;
+      stroke-dashoffset: calc(1 - var(--witness-progress));
+      transition: stroke-dashoffset 120ms linear;
+    }
+
+    .witness__route-stop {
+      fill: rgba(232, 241, 245, 0.86);
+      opacity: 0.62;
+      transition:
+        opacity 180ms linear,
+        r 180ms linear,
+        fill 180ms linear;
+    }
+
+    .witness__route-stop.is-passed {
+      fill: #dffbff;
+      opacity: 0.96;
+    }
+
+    .witness__route-marker {
+      fill: transparent;
+      stroke: rgba(159, 232, 246, 0.96);
+      stroke-width: 2.35;
+    }
+
+    .witness__route-marker-core {
+      fill: rgba(232, 249, 255, 0.92);
+      opacity: 0.92;
+    }
+
+    .witness__route-arrow {
+      fill: none;
+      stroke: rgba(232, 249, 255, 0.98);
+      stroke-width: 3;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 0.42rem rgba(159, 232, 246, 0.34));
+    }
+
+    .witness__narrative {
+      position: absolute;
+      z-index: 5;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .witness__narrative::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      background:
+        linear-gradient(90deg, rgba(4, 18, 31, 0.03), rgba(4, 18, 31, 0.16)),
+        radial-gradient(circle at 50% 52%, transparent 25%, rgba(4, 18, 31, 0.16) 100%);
+      transition: opacity 2.25s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .witness--cue-active .witness__narrative::before {
+      opacity: 0.82;
+    }
+
+    .witness__cue {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: min(94rem, calc(100vw - 3rem));
+      color: var(--text-light);
+      font-family: "Avenir Next Condensed", "Helvetica Neue Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+      font-size: 4rem;
+      font-stretch: condensed;
+      font-weight: 500;
+      line-height: 1.16;
+      letter-spacing: 0.055em;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: nowrap;
+      opacity: 0;
+      filter: blur(1.25rem);
+      transform: translate3d(-50%, calc(-50% + 4.2rem), 0) scale(0.94);
+      text-shadow:
+        0 0.1rem 0.42rem rgba(4, 18, 31, 0.66),
+        0 0 1.2rem rgba(4, 18, 31, 0.34);
+      transition:
+        opacity 2s cubic-bezier(0.22, 1, 0.36, 1),
+        filter 2.15s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 2.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .witness__cue.is-active {
+      opacity: var(--witness-cue-opacity, 1);
+      filter: blur(0);
+      transform: translate3d(-50%, calc(-50% - 0.45rem), 0) scale(1.018);
+      animation: witness-cue-drift 4.8s ease-in-out both;
+    }
+
+    @keyframes witness-cue-drift {
+      from {
+        letter-spacing: 0.085em;
+      }
+
+      to {
+        letter-spacing: 0.055em;
+      }
+    }
+
+    .witness__cue-emphasis {
+      color: #9fe8f6;
+      font-weight: 650;
+      text-shadow:
+        0 0 0.35rem rgba(159, 232, 246, 0.34),
+        0 0.1rem 0.42rem rgba(4, 18, 31, 0.7);
+    }
+
+    @media (max-width: 1180px) {
+      .witness__cue {
+        font-size: 2.7rem;
+        letter-spacing: 0.052em;
+      }
+    }
+
+    @media (max-width: 960px) {
+      .witness__cue {
+        font-size: 2.45rem;
+        letter-spacing: 0.046em;
+      }
+    }
+
+    .witness__filters {
+      position: absolute;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .about-page,
+      .witness__language-menu,
+      .witness__intro,
+      .witness__hud,
+      .witness__prompt,
+      .witness__narrative::before,
+      .witness__cue {
+        transition-duration: 1ms;
+      }
+
+      .witness__intro-stage--brand,
+      .witness__intro-stage--dive,
+      .witness__intro-line,
+      .witness__intro-subtitle,
+      .witness__intro-kicker,
+      .witness__intro-copy,
+      .witness__begin {
+        animation-duration: 1ms;
+        animation-delay: 0ms;
+      }
+
+      .witness__intro-stage--brand {
+        display: none;
+      }
+
+      .witness__intro-stage--dive,
+      .witness__intro-stage--dive .witness__intro-kicker,
+      .witness__intro-stage--dive .witness__intro-copy {
+        opacity: 1;
+        filter: none;
+        clip-path: inset(0 0 0 0);
+        transform: none;
+      }
+
+      .witness__begin {
+        opacity: 1;
+        visibility: visible;
+        transform: translate(-50%, -50%);
+      }
+
+      .witness__cover,
+      .witness__cover-video,
+      .witness__transition-wash {
+        transition-duration: 1ms;
+        animation: none;
+      }
+
+      .witness__cue {
+        filter: none;
+        animation: none;
+      }
+
+      .about-page,
+      .about-page__background {
+        transform: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .witness__video,
+      .witness__cover-video {
+        inset: -12%;
+        width: 124%;
+        height: 124%;
+      }
+
+      .witness__logo {
+        top: max(1rem, env(safe-area-inset-top));
+        left: 1rem;
+        width: clamp(7.2rem, 38vw, 9.6rem);
+      }
+
+      .witness__nav {
+        top: max(4.85rem, calc(env(safe-area-inset-top) + 4.85rem));
+        left: 1rem;
+        right: 1rem;
+        max-width: none;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 2rem), transparent 100%);
+      }
+
+      .witness__nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .witness__nav-list {
+        justify-content: flex-start;
+        gap: 1rem;
+        width: max-content;
+        padding-right: 2.4rem;
+      }
+
+      .witness__nav a,
+      .about-page__nav a,
+      .witness__language-toggle {
+        min-height: 2rem;
+        font-size: 0.58rem;
+        letter-spacing: 0.17em;
+        white-space: nowrap;
+      }
+
+      .witness__language-menu {
+        position: fixed;
+        top: max(6.95rem, calc(env(safe-area-inset-top) + 6.95rem));
+        right: 1rem;
+        width: 8.8rem;
+        padding: 0.58rem 0.76rem 0.64rem;
+      }
+
+      .about-page__nav .witness__language-menu {
+        top: max(4.4rem, calc(env(safe-area-inset-top) + 4.4rem));
+      }
+
+      .about-page__background {
+        object-position: 50% 50%;
+        filter: saturate(0.94) contrast(1.05) brightness(0.72);
+      }
+
+      .about-page__header {
+        top: max(1rem, env(safe-area-inset-top));
+        left: 1rem;
+        right: 1rem;
+        display: block;
+      }
+
+      .about-page__logo {
+        width: clamp(7.2rem, 38vw, 9.6rem);
+      }
+
+      .about-page__nav {
+        max-width: none;
+        margin-top: 0.25rem;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        mask-image: linear-gradient(90deg, #000 0%, #000 calc(100% - 2rem), transparent 100%);
+      }
+
+      .about-page__nav::-webkit-scrollbar {
+        display: none;
+      }
+
+      .about-page__content {
+        align-items: start;
+        padding: 9.2rem 1rem 4rem;
+      }
+
+      .about-page__title {
+        font-size: clamp(3rem, 15vw, 4.7rem);
+        letter-spacing: 0.035em;
+      }
+
+      .about-page__lead {
+        font-size: clamp(1.05rem, 5vw, 1.35rem);
+        line-height: 1.56;
+      }
+
+      .about-page__sections {
+        margin-top: 2rem;
+      }
+
+      .about-page__section {
+        grid-template-columns: 1fr;
+        gap: 0.7rem;
+      }
+
+      .witness__intro {
+        top: 49%;
+        width: calc(100vw - 2rem);
+        gap: 0.62rem;
+      }
+
+      .witness__intro-line {
+        font-size: clamp(3.7rem, 18vw, 5.85rem);
+        letter-spacing: 0.028em;
+      }
+
+      .witness__intro-subtitle {
+        max-width: 30ch;
+        font-size: 0.62rem;
+        letter-spacing: 0.24em;
+        line-height: 1.35;
+      }
+
+      .witness__intro-kicker {
+        font-size: clamp(2.1rem, 10vw, 3.15rem);
+        letter-spacing: 0.045em;
+      }
+
+      .witness__intro-copy {
+        max-width: 31ch;
+        font-size: clamp(0.92rem, 4.3vw, 1.08rem);
+        letter-spacing: 0.018em;
+        line-height: 1.52;
+      }
+
+      .witness__begin {
+        min-width: min(13.5rem, calc(100vw - 7rem));
+      }
+
+      .witness__lab-link {
+        top: 71%;
+        min-width: min(12.4rem, calc(100vw - 7rem));
+        min-height: 2.65rem;
+        font-size: 0.62rem;
+      }
+
+      .witness__begin::before,
+      .witness__begin::after {
+        width: clamp(1.2rem, 7vw, 2.5rem);
+      }
+
+      .witness__hud {
+        top: calc(74% + 3.25rem);
+        left: 50%;
+        bottom: auto;
+        width: calc(100vw - 2rem);
+      }
+
+      .witness__prompt {
+        gap: 0.5rem;
+      }
+
+      .witness__prompt-text {
+        font-size: 0.58rem;
+        letter-spacing: 0.28em;
+      }
+
+      .witness__dive-log {
+        left: 0.9rem;
+        bottom: max(0.85rem, env(safe-area-inset-bottom));
+        max-width: calc(100vw - 5rem);
+      }
+
+      .witness__dive-info {
+        min-width: 0;
+      }
+
+      .witness__dive-location {
+        font-size: 0.78rem;
+        letter-spacing: 0.14em;
+      }
+
+      .witness__dive-process,
+      .witness__dive-meta {
+        font-size: 0.48rem;
+        letter-spacing: 0.14em;
+      }
+
+      .witness__dive-meta {
+        gap: 0.38rem;
+      }
+
+      .witness__route {
+        top: 57%;
+        right: 0.8rem;
+        width: 3rem;
+        height: min(52vh, 26rem);
+      }
+
+      .witness__cue,
+      .witness__cue--coral,
+      .witness__cue--turtle,
+      .witness__cue--murky {
+        top: 50%;
+        right: auto;
+        left: 50%;
+        width: calc(100vw - 2rem);
+        max-width: 32rem;
+        padding-inline: 0.5rem;
+        font-size: 2.45rem;
+        letter-spacing: 0.052em;
+        line-height: 1.18;
+        text-align: center;
+        white-space: normal;
+        transform: translate3d(-50%, calc(-50% + 0.8rem), 0);
+      }
+
+      .witness__cue.is-active {
+        transform: translate3d(-50%, -50%, 0);
+      }
+    }
+
+    @media (max-width: 420px) {
+      .witness__cue,
+      .witness__cue--coral,
+      .witness__cue--turtle,
+      .witness__cue--murky {
+        font-size: 2.1rem;
+      }
+    }
+  </style>
+</head>
+<body data-bluetrace-build="witness-wheel-scrub-v4">
+  <main>
+    <section
+      id="section1"
+      class="witness"
+      aria-label="Witness: scroll-controlled ocean descent"
+      data-witness
+      data-end-hold="0.22"
+      tabindex="-1"
+    >
+      <video
+        class="witness__video"
+        data-witness-video
+        muted
+        playsinline
+        preload="auto"
+        aria-hidden="true"
+      >
+        <source src="assets/video/witness-current-descent-joined-v2.mp4" type="video/mp4" />
+      </video>
+
+      <div
+        class="witness__cover"
+        data-witness-cover
+        data-cover-start="0.55"
+        data-cover-end="9.35"
+        data-cover-overlap="2.35"
+        aria-hidden="true"
+      >
+        <video
+          class="witness__cover-video is-active"
+          data-witness-cover-video
+          muted
+          playsinline
+          preload="auto"
+        >
+          <source src="assets/video/witness-cover-surface-loop-v1.mp4" type="video/mp4" />
+        </video>
+        <video
+          class="witness__cover-video"
+          data-witness-cover-video
+          muted
+          playsinline
+          preload="auto"
+        >
+          <source src="assets/video/witness-cover-surface-loop-v1.mp4" type="video/mp4" />
+        </video>
+      </div>
+
+      <div class="witness__transition-wash" aria-hidden="true"></div>
+
+      <img
+        class="witness__logo"
+        src="assets/images/bluetrace-logo-white.png"
+        alt="BlueTrace"
+      />
+
+      <nav class="witness__nav" aria-label="Primary navigation">
+        <ul class="witness__nav-list">
+          <li><a href="#about">About</a></li>
+          <li><a href="#science-guide">Science Guide</a></li>
+          <li><a href="#practice-dive">Practice Dive</a></li>
+          <li><a href="#field-notes">Field Notes</a></li>
+          <li><a href="#diver-passport">Diver Passport</a></li>
+          <li class="witness__language" data-language-menu>
+            <button
+              class="witness__language-toggle"
+              type="button"
+              aria-label="Open language menu"
+              aria-expanded="false"
+              aria-controls="witness-language-menu"
+              data-language-toggle
+            >
+              EN
+            </button>
+            <ul class="witness__language-menu" id="witness-language-menu" aria-label="Language options">
+              <li><button type="button" lang="en" data-language-option>English</button></li>
+              <li><button type="button" lang="zh-CN" data-language-option>中文</button></li>
+            </ul>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="witness__intro" aria-label="BlueTrace introduction">
+        <div class="witness__intro-stage witness__intro-stage--brand">
+          <h1 class="witness__intro-line">BLUETRACE</h1>
+          <p class="witness__intro-subtitle">FOLLOW THE TRACE WE LEAVE</p>
+        </div>
+        <div class="witness__intro-stage witness__intro-stage--dive">
+          <p class="witness__intro-kicker">Enter the blue.</p>
+          <p class="witness__intro-copy">Each breath carries you deeper into a sea that remembers.</p>
+        </div>
+      </div>
+
+      <button class="witness__begin" type="button" data-witness-begin>
+        LET'S BEGIN
+      </button>
+
+      <div class="witness__narrative" aria-live="polite">
+        <p class="witness__cue witness__cue--coral" data-witness-cue data-progress="0.32" aria-hidden="true">
+          The <span class="witness__cue-emphasis">reef</span> is still here. Its <span class="witness__cue-emphasis">color</span> is not.
+        </p>
+        <p class="witness__cue witness__cue--turtle" data-witness-cue data-progress="0.55" aria-hidden="true">
+          A <span class="witness__cue-emphasis">turtle</span> swims through what we <span class="witness__cue-emphasis">left behind</span>.
+        </p>
+        <p class="witness__cue witness__cue--murky" data-witness-cue data-progress="0.79" aria-hidden="true">
+          The <span class="witness__cue-emphasis">water</span> clouds. The way <span class="witness__cue-emphasis">forward</span> fades.
+        </p>
+      </div>
+
+      <div class="witness__hud" aria-hidden="true">
+        <div class="witness__prompt" data-witness-prompt>
+          <span class="witness__prompt-mark" aria-hidden="true">
+            <span class="witness__prompt-arrow"></span>
+            <span class="witness__prompt-arrow"></span>
+          </span>
+          <span class="witness__prompt-text">Scroll to advance</span>
+        </div>
+      </div>
+
+      <div class="witness__dive-log" aria-hidden="true">
+        <div class="witness__dive-info">
+          <p class="witness__dive-location">PACIFIC OCEAN</p>
+          <div class="witness__dive-process">
+            DISCOVERY PROCESS: <span data-witness-discovery>0%</span>
+          </div>
+          <div class="witness__dive-meta">
+            <span>DEPTH: 16M</span>
+            <span class="witness__dive-divider">|</span>
+            <span>TEMP: 22 °C</span>
+          </div>
+        </div>
+      </div>
+
+      <a class="witness__lab-link" href="#science-guide" data-witness-lab-link>
+        OFF TO LAB
+      </a>
+
+      <div class="witness__route" aria-hidden="true">
+        <svg viewBox="0 0 76 470" role="img" aria-label="Dive route progress">
+          <path
+            class="witness__route-track"
+            d="M42 458 C48 439 35 421 31 390 C25 352 34 324 43 282 C51 247 43 221 32 184 C23 153 26 128 36 92 C45 60 40 44 39 12"
+          />
+          <path
+            class="witness__route-progress"
+            data-witness-route-progress
+            pathLength="1"
+            d="M42 458 C48 439 35 421 31 390 C25 352 34 324 43 282 C51 247 43 221 32 184 C23 153 26 128 36 92 C45 60 40 44 39 12"
+          />
+          <circle class="witness__route-stop" data-witness-route-stop data-progress="0" cx="42" cy="458" r="4.4" />
+          <circle class="witness__route-stop" data-witness-route-stop data-progress="0.16" cx="31" cy="382" r="2.7" />
+          <circle class="witness__route-stop" data-witness-route-stop data-progress="0.32" cx="45" cy="262" r="2.7" />
+          <circle class="witness__route-stop" data-witness-route-stop data-progress="0.55" cx="32" cy="166" r="2.7" />
+          <circle class="witness__route-stop" data-witness-route-stop data-progress="0.79" cx="38" cy="84" r="2.2" />
+          <circle class="witness__route-stop" data-witness-route-stop data-progress="1" cx="39" cy="12" r="4.2" />
+          <g data-witness-route-cursor transform="translate(42 458)">
+            <circle class="witness__route-marker" r="10.2" />
+            <circle class="witness__route-marker-core" r="2.9" />
+            <path class="witness__route-arrow" d="M-8 2 L0 -8 L8 2 M-5 9 L0 3 L5 9" />
+          </g>
+        </svg>
+      </div>
+
+      <p class="sr-only">
+        This scene advances with a mouse wheel, trackpad, arrow keys, page keys, or touch gesture.
+        The descent pauses at three observations before continuing.
+      </p>
+    </section>
+
+    <section id="about" class="about-page" aria-labelledby="about-title" tabindex="-1">
+      <img
+        class="about-page__background"
+        src="assets/images/about-bluetrace-background.png"
+        alt=""
+        aria-hidden="true"
+      />
+
+      <header class="about-page__header" aria-label="About page navigation">
+        <a class="about-page__home" href="#section1" aria-label="Return to BlueTrace dive">
+          <img
+            class="about-page__logo"
+            src="assets/images/bluetrace-logo-white.png"
+            alt="BlueTrace"
+          />
+        </a>
+
+        <nav class="about-page__nav" aria-label="Primary navigation">
+          <ul class="witness__nav-list">
+            <li><a href="#about" aria-current="page">About</a></li>
+            <li><a href="#science-guide">Science Guide</a></li>
+            <li><a href="#practice-dive">Practice Dive</a></li>
+            <li><a href="#field-notes">Field Notes</a></li>
+            <li><a href="#diver-passport">Diver Passport</a></li>
+            <li class="witness__language" data-language-menu>
+              <button
+                class="witness__language-toggle"
+                type="button"
+                aria-label="Open language menu"
+                aria-expanded="false"
+                aria-controls="about-language-menu"
+                data-language-toggle
+              >
+                EN
+              </button>
+              <ul class="witness__language-menu" id="about-language-menu" aria-label="Language options">
+                <li><button type="button" lang="en" data-language-option>English</button></li>
+                <li><button type="button" lang="zh-CN" data-language-option>中文</button></li>
+              </ul>
+            </li>
+          </ul>
+        </nav>
+      </header>
+
+      <div class="about-page__content">
+        <article class="about-page__inner">
+          <p class="about-page__kicker">About BlueTrace</p>
+          <h1 id="about-title" class="about-page__title">Every dive leaves a trace.</h1>
+          <p class="about-page__lead">
+            The question is what kind of trace we choose to leave behind.
+          </p>
+
+          <div class="about-page__sections">
+            <section class="about-page__section" aria-labelledby="about-story">
+              <h2 id="about-story">Our Story</h2>
+              <div>
+                <p>
+                  The idea behind BlueTrace began beneath the ocean’s surface.
+                </p>
+                <p>
+                  During our diving experiences, we witnessed plastic waste drifting through the water and coral reefs showing signs of stress and degradation. We realized that while many divers deeply care about the ocean, few understand how everyday choices — from sunscreen use to equipment habits — can leave invisible traces on marine ecosystems.
+                </p>
+                <p>
+                  This experience inspired us to create BlueTrace, a platform that transforms underwater observations and scientific knowledge into an interactive learning journey.
+                </p>
+              </div>
+            </section>
+
+            <section class="about-page__section" aria-labelledby="about-team">
+              <h2 id="about-team">Who We Are</h2>
+              <p>
+                BlueTrace is a student-led ocean awareness project developed by a team of high school researchers, designers and divers united by a passion to understand and protect marine ecosystems.
+              </p>
+            </section>
+
+            <section class="about-page__section" aria-labelledby="about-mission">
+              <h2 id="about-mission">Our Mission</h2>
+              <div>
+                <p>
+                  To empower divers with scientific and practical knowledge for more responsible ocean exploration.
+                </p>
+                <p>
+                  Through interactive experiences, we aim to help ocean lovers understand their impact and make choices that better protect the ecosystems they admire.
+                </p>
+                <p class="about-page__closing">
+                  Every dive leaves a trace. The question is what kind of trace we choose to leave behind.
+                </p>
+              </div>
+            </section>
+
+            <section class="about-page__section" aria-labelledby="about-approach">
+              <h2 id="about-approach">Our Approach</h2>
+              <div>
+                <p>
+                  Built within 24 hours using Vibe Coding, BlueTrace combines diver observations, environmental research, AI-assisted development, and interactive design to transform marine science into an immersive experience.
+                </p>
+                <p>
+                  By connecting human choices with visible changes in coral ecosystems, we turn complex environmental issues into a story that divers can see, understand, and act upon.
+                </p>
+              </div>
+            </section>
+
+            <section class="about-page__section" aria-labelledby="about-vision">
+              <h2 id="about-vision">Our Vision</h2>
+              <p>
+                We envision a future where responsible diving becomes part of ocean exploration — where every diver is not only an observer, but also a protector of the marine environments they love.
+              </p>
+            </section>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <script src="witness-video.js?v=2"></script>
+</body>
+</html>
